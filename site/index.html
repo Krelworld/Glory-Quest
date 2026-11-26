@@ -1,0 +1,347 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0"><title>Knockout Day</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600&family=Silkscreen:wght@400;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap">
+<style>
+  /* Match-day television: a score bug in the corner, caption straps for the tannoy and the
+     commentary, condensed capitals, sharp edges. Single dark look: it sits over a floodlit game. */
+  :root {
+    --ink: #f3f5f2;          /* caption white */
+    --dim: #9eaab8;          /* secondary text, slate */
+    --night: #0b1220;        /* broadcast navy: panels */
+    --night2: #142036;       /* raised panels */
+    --rule: #26344f;         /* hairlines */
+    --bug: #f5c400;          /* clock / tag yellow */
+    --bugink: #141414;
+    --red: #d7263d;          /* England red: the button you press */
+    --warn: #ff7a45;
+    --ok: #4cc38a;
+    --bg: #070b12;
+    --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+    --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --opp: #b3122a;          /* set per match */
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow: hidden; touch-action: none;
+    font: 500 15px/1.35 var(--body);
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  #app { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  #game { position: absolute; inset: 0; }
+  /* Cinematic moments: letterbox bars slide in. */
+  .lb { position: absolute; left: 0; right: 0; height: 0; background: #000; z-index: 3; transition: height 0.35s ease; pointer-events: none; }
+  #lbTop { top: 0; } #lbBot { bottom: 0; }
+  body.cine .lb { height: 11vh; }
+  #cineCap { position: absolute; left: 50%; bottom: 3vh; transform: translateX(-50%); z-index: 4; color: #fff; font: 800 22px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; transition: opacity 0.3s; pointer-events: none; text-shadow: 0 2px 0 #000; }
+  body.cine #cineCap { opacity: 1; }
+  #hurt { position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0; box-shadow: inset 0 0 120px 40px rgba(170, 0, 0, 0.75); }
+  #hurt.on { animation: hurt 0.45s ease-out; }
+  @keyframes hurt { 0% { opacity: 1; } 100% { opacity: 0; } }
+  /* The toilet stall close-up. */
+  #stall { position: absolute; inset: 0; z-index: 5; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #stall canvas { image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; max-height: 100%; aspect-ratio: 400 / 240; width: auto; height: 100%; }
+  #stall.shake canvas { animation: stallshake 0.35s linear; }
+  @keyframes stallshake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-8px,4px); } 40% { transform: translate(7px,-5px); } 60% { transform: translate(-5px,-3px); } 80% { transform: translate(4px,3px); } }
+  #stallCap { position: absolute; left: 50%; transform: translateX(-50%); top: max(14px, env(safe-area-inset-top)); max-width: 80%; background: var(--night); color: var(--ink); font: 600 17px/1.3 var(--display); padding: 8px 14px; border-left: 4px solid #e879f9; }
+  #stallBtns { position: absolute; bottom: max(12px, env(safe-area-inset-bottom)); left: 0; right: 0; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 0 12px; }
+  #stallBtns button.red { background: var(--red, #d7263d); }
+  #game canvas { display: block; touch-action: none; width: 100% !important; height: 100% !important; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .float { position: absolute; z-index: 2; }
+  .panel { background: var(--night); border: 0; }
+
+  /* Buttons: condensed capitals on angled plates. */
+  button {
+    font: 700 16px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink); background: var(--night); border: 0; border-bottom: 2px solid var(--rule);
+    min-width: 44px; min-height: 44px; padding: 0 14px; cursor: pointer; border-radius: 0;
+  }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--bug); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: var(--bug); color: var(--bugink); }
+  button:disabled { opacity: 0.4; }
+
+  #top {
+    top: 8px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px));
+    display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; pointer-events: none;
+  }
+  #top > * { pointer-events: auto; }
+
+  /* The score bug. */
+  #score { display: flex; align-items: stretch; height: 38px; font-family: var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+  #score span, #score b { display: flex; align-items: center; }
+  #sc0, #sc1 { padding: 0 10px; font-weight: 700; font-size: 17px; letter-spacing: 0.06em; background: var(--night); position: relative; }
+  #sc0::before, #sc1::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #f4f4f4; }
+  #sc1::before { background: var(--opp); }
+  #sc { padding: 0 10px; font-size: 22px; font-weight: 800; background: var(--ink); color: var(--bugink); }
+  #score .clock { padding: 0 10px; font-size: 17px; font-weight: 700; background: var(--bug); color: var(--bugink); }
+
+  /* Status straps under the bug: the goal, and who's after you. */
+  #status { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 0; padding-top: 4px; }
+  #where { padding: 5px 12px 5px 10px; font: 600 15px/1.1 var(--display); letter-spacing: 0.03em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--night); border-left: 4px solid var(--bug); }
+  #where.bad { border-left-color: var(--warn); color: var(--warn); }
+  #eye { padding: 5px 12px; font: 800 14px/1.1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--bugink); background: var(--bug); }
+  #eye.hot { background: var(--red); color: var(--ink); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { filter: brightness(1.35); } }
+  #right { display: flex; gap: 6px; align-items: center; }
+  #money { display: flex; align-items: center; height: 38px; padding: 0 12px; font: 800 18px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--bug); }
+
+  /* Captions: a coloured tag and a line of text, like a broadcast lower third. */
+  #ticker {
+    left: max(8px, env(safe-area-inset-left, 0px)); right: calc(max(10px, env(safe-area-inset-right, 0px)) + min(270px, 48vw)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px; pointer-events: none;
+  }
+  #ticker .line { display: flex; align-items: stretch; max-width: min(560px, 100%); background: rgba(11, 18, 32, 0.94); animation: strap .22s ease-out; }
+  #ticker .src { flex: none; display: flex; align-items: center; padding: 6px 9px; font: 800 13px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; background: var(--night2); color: var(--dim); }
+  #ticker .line.big .src { background: var(--bug); color: var(--bugink); }
+  #ticker .txt { padding: 7px 12px; font: 600 16px/1.25 var(--display); letter-spacing: 0.01em; text-wrap: pretty; }
+  @keyframes strap { from { transform: translateX(-12px); opacity: 0; } }
+
+  #controls {
+    right: max(10px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    display: grid; grid-template-columns: auto auto; gap: 8px; justify-items: end; align-items: end;
+  }
+  /* The one button that matters: red, angled, big. */
+  #act {
+    grid-column: 1 / 3; min-height: 62px; max-width: min(280px, 50vw); padding: 8px 26px 8px 20px;
+    font: 800 22px/1 var(--display); letter-spacing: 0.03em; background: var(--red); border-bottom: 3px solid #8e1626;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); text-align: left; text-wrap: balance;
+  }
+  #act[hidden] { display: none; }
+  /* Held long enough for a haymaker: the button burns yellow. */
+  #act.charged, #hit.charged { background: #f2c94c !important; color: #111 !important; transform: scale(1.06); }
+  #throw { background: var(--bug); color: var(--bugink); border-bottom-color: #9a7b00; }
+  #lower { display: flex; gap: 6px; grid-column: 1 / 3; justify-content: flex-end; flex-wrap: wrap; }
+  #hit { background: #5a0f1a; border-bottom-color: var(--red); color: #ffd0d6; }
+  #fade { position: absolute; inset: 0; z-index: 5; background: #000; opacity: 0; pointer-events: none; transition: opacity .35s; }
+  #fade.on { opacity: 1; }
+
+  #speed { right: max(12px, env(safe-area-inset-right)); top: 92px; display: flex; gap: 2px; padding: 2px; background: var(--night); }
+  #speed button { min-height: 36px; font-size: 15px; }
+  #hint { left: 50%; transform: translateX(-50%); top: 92px; padding: 7px 14px; font: 700 16px/1.2 var(--display); color: var(--bugink); background: var(--bug); max-width: 80vw; pointer-events: none; text-align: center; text-wrap: balance; }
+
+  /* Sheets: shop, bag, bets, menu. */
+  .sheet {
+    right: max(10px, env(safe-area-inset-right, 0px)); bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: min(390px, calc(100% - 20px)); max-height: calc(100% - 100px); overflow-y: auto; padding: 0 0 12px; z-index: 4;
+    display: flex; flex-direction: column; gap: 8px; background: var(--night); box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  }
+  .sheet > *:not(h2):not(.close) { margin: 0 12px; }
+  .sheet h2 { margin: 0; padding: 9px 12px; font: 800 16px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--bugink); background: var(--bug); }
+  .sheet p { color: var(--dim); font-size: 14px; }
+  .sheet .list { display: flex; flex-direction: column; gap: 4px; }
+  .sheet .list button { text-align: left; text-transform: none; font: 600 17px/1.15 var(--display); letter-spacing: 0.01em; background: var(--night2); border-bottom: 1px solid var(--rule); padding: 8px 12px; }
+  .sheet .item { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; background: var(--night2); }
+  .sheet .item b { font: 700 18px/1.1 var(--display); letter-spacing: 0.01em; }
+  .sheet .item .row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sheet .item .row button { min-height: 38px; padding: 0 12px; font-size: 15px; background: var(--night); }
+  .sheet .where { color: var(--dim); font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.1em; }
+  .sheet .close { align-self: flex-end; margin: 0 12px; }
+  .sheet .odds { font-variant-numeric: tabular-nums; color: var(--bug); font-weight: 800; }
+  .sheet .slip { font-size: 13px; color: var(--dim); }
+  .sheet .log p { font-size: 13px; }
+  .sheet .log b { font: 800 12px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--bug); margin-right: 4px; }
+
+  #joy { position: absolute; z-index: 3; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); pointer-events: none; }
+  #knob { position: absolute; left: 35px; top: 35px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.35); }
+
+  /* Cards: the match programme, the bag to pack, the evening news. */
+  .overlay { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); background: rgba(3, 6, 11, 0.78); }
+  .card { width: min(480px, 100%); max-height: 100%; overflow-y: auto; padding: 0 0 18px; display: flex; flex-direction: column; gap: 12px; background: var(--night); box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .card > * { flex-shrink: 0; margin-left: 18px; margin-right: 18px; }
+  .card .eyebrow { margin: 0; padding: 8px 18px; font: 800 14px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; background: var(--red); color: var(--ink); display: flex; justify-content: space-between; gap: 8px; }
+  .card h1 { margin-top: 4px; margin-bottom: 0; font: 800 34px/0.98 var(--display); letter-spacing: 0.005em; text-transform: uppercase; text-wrap: balance; }
+  .card p { margin-top: 0; margin-bottom: 0; color: var(--dim); font-size: 15px; }
+  .card ul { margin-top: 0; margin-bottom: 0; padding-left: 18px; color: var(--dim); display: flex; flex-direction: column; gap: 6px; }
+  .card li b { color: var(--ink); font-weight: 600; }
+  .card .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .card button.primary { background: var(--red); border-bottom: 3px solid #8e1626; font-size: 20px; padding: 0 26px 0 20px; min-height: 52px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+  .news { border: 0; overflow: hidden; background: #05080e; }
+  .newsbar { display: flex; justify-content: space-between; padding: 7px 10px; background: var(--red); color: var(--ink); font: 800 13px/1 var(--display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .news h2 { margin: 12px 12px 6px; font: 800 24px/1.02 var(--display); text-transform: uppercase; text-wrap: balance; }
+  .news ul { margin: 0 0 12px; color: var(--ink); }
+  .card .small { font-size: 13px; }
+  .prep { display: flex; flex-direction: column; gap: 4px; }
+  .prep label { display: flex; gap: 10px; align-items: center; padding: 8px 10px; background: var(--night2); min-height: 44px; font: 600 17px/1.1 var(--display); }
+  .prep input { width: 20px; height: 20px; accent-color: var(--red); }
+  #prepProblem { color: var(--warn); min-height: 1.2em; }
+  kbd { font: 700 13px/1 var(--display); background: var(--night2); border-bottom: 2px solid var(--rule); padding: 2px 5px; color: var(--ink); }
+
+  #debug { left: max(10px, env(safe-area-inset-left, 0px)); top: 64px; width: min(320px, calc(100% - 20px)); max-height: calc(100% - 140px); overflow-y: auto; padding: 10px; z-index: 5; display: flex; flex-direction: column; gap: 6px; }
+  #debug .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  #debug button { font-size: 13px; min-height: 36px; text-align: left; text-transform: none; }
+
+  /* Shop shelves, bag, purchase feedback. */
+  .ico { width: 40px; height: 40px; image-rendering: pixelated; flex: none; display: block; }
+  .ico.none { background: var(--night); }
+  .sheet .purse b { color: var(--bug); font: 800 18px/1 var(--display); }
+  .wares { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .sheet .wares button.ware { display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; text-align: left; text-transform: none;
+    padding: 8px; min-height: 64px; background: var(--night2); border-bottom: 2px solid var(--rule); font: 600 16px/1.05 var(--display); }
+  .ware .ico { grid-row: 1 / 3; }
+  .ware .pr { font: 800 18px/1 var(--display); color: var(--bug); }
+  .ware.poor { opacity: 0.55; }
+  .ware.poor .pr { color: var(--warn); }
+  .ware:active { background: #1d2d4b; }
+  .item.bagged { display: grid; grid-template-columns: 40px 1fr; column-gap: 10px; align-items: center; }
+  .item.bagged .col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .item.bagged .row { grid-column: 1 / 3; }
+  .shake { animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  #money.spent { animation: spent .6s; }
+  @keyframes spent { 30% { background: var(--red); color: var(--ink); transform: scale(1.08); } }
+  .minus { position: absolute; z-index: 7; transform: translateX(-50%); font: 800 20px/1 var(--display); color: var(--red); text-shadow: 0 2px 0 #000; pointer-events: none; animation: minus 1.1s ease-out forwards; }
+  @keyframes minus { to { transform: translate(-50%, 26px); opacity: 0; } }
+  .fly { position: absolute; z-index: 7; pointer-events: none; transition: transform .5s cubic-bezier(.5, -0.3, .7, 1), opacity .5s; }
+  .fly .ico { width: 48px; height: 48px; }
+  #bagBtn.bump { animation: bump .35s; }
+  @keyframes bump { 40% { transform: scale(1.18); background: var(--bug); color: var(--bugink); } }
+  #toast { left: max(8px, env(safe-area-inset-left, 0px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 8px; background: var(--night); border-left: 4px solid var(--bug); z-index: 5; pointer-events: none; }
+  #toast small { display: block; font: 800 11px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--bug); }
+  #toast span { font: 700 18px/1.1 var(--display); }
+  #toast.in { animation: strap .22s ease-out; }
+  .touch .keys { display: none; }
+  /* Landscape phones: the action buttons fill the bottom right, so captions go up under the score. */
+  @media (max-height: 520px) and (min-width: 561px) {
+    #ticker { top: calc(56px + env(safe-area-inset-top, 0px)); bottom: auto; right: 40vw; }
+    #ticker .txt { font-size: 15px !important; }
+  }
+  @media (max-width: 560px) {
+    #ticker { right: max(8px, env(safe-area-inset-right, 0px)); bottom: 150px; }
+    #act { min-height: 56px; font-size: 20px; }
+    #top { flex-wrap: wrap; }
+    #status { order: 3; flex-basis: 100%; }
+    #hint, #speed { top: 104px; }
+    #sc0, #sc1 { padding: 0 8px; font-size: 15px; }
+    #sc { font-size: 19px; padding: 0 8px; }
+    #score .clock { font-size: 15px; padding: 0 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { #ticker .line, #eye.hot { animation: none; } }
+
+  /* ---- Pixel game skin (over the broadcast look): pixel fonts, bevelled panels and buttons. ---- */
+  :root {
+    --display: "Silkscreen", "Pixelify Sans", monospace;
+    --body: "Pixelify Sans", "Silkscreen", monospace;
+    --night: #141a24; --night2: #1d2533; --rule: #000;
+  }
+  body { font: 500 16px/1.3 var(--body); -webkit-font-smoothing: none; font-smooth: never; }
+  button, .panel, #sheet, #ticker > *, #hint, #toast, #speed, #stallCap, .ware, #bug > * {
+    box-shadow: 0 0 0 2px #000, inset 2px 2px 0 rgba(255,255,255,0.16), inset -2px -2px 0 rgba(0,0,0,0.5) !important;
+  }
+  button { font: 700 14px/1 var(--display) !important; letter-spacing: 0.02em; border-bottom: 0 !important; background: var(--night2); text-shadow: 2px 2px 0 #000; }
+  button:active { transform: translateY(2px); box-shadow: 0 0 0 2px #000, inset -2px -2px 0 rgba(255,255,255,0.12), inset 2px 2px 0 rgba(0,0,0,0.5) !important; }
+  button.red, #act { background: #c81e32 !important; color: #fff !important; }
+  #act { font-size: 18px !important; clip-path: none !important; }
+  h2, h3, .tag, .eyebrow { font-family: var(--display) !important; letter-spacing: 0.02em; }
+  #sheet { background: #10151e !important; image-rendering: pixelated; }
+  #sheet h2 { background: #f5c400; color: #141414; text-shadow: none; padding: 8px 12px; }
+  .ware .nm { font-family: var(--body) !important; }
+  #cineCap { font-family: var(--display) !important; font-size: 26px; text-shadow: 3px 3px 0 #000; }
+  #stallCap { font-family: var(--body) !important; border-left-width: 6px; }
+  /* Running text in the readable pixel face; labels and buttons in the blocky one. */
+  #ticker .txt, #where, #hint, #toast, #sheet p, .ware .nm, #intro p, #intro li, #ending p { font-family: var(--body) !important; font-weight: 600 !important; letter-spacing: 0 !important; text-transform: none !important; }
+  #ticker .txt { font-size: 17px !important; }
+  #where { font-size: 16px !important; }
+</style>
+
+<div id="app">
+  <div id="game"></div>
+  <div id="joy" hidden><div id="knob"></div></div>
+
+  <div id="top" class="float">
+    <div id="score" class="panel"><span id="sc0">ENG</span><b id="sc">0–0</b><span id="sc1">OPP</span><span class="clock" id="clock">0:00</span></div>
+    <div id="status">
+      <div id="where" class="panel">Outside the ground</div>
+      <div id="eye" class="panel" hidden>Being watched</div>
+    </div>
+    <div id="right">
+      <div id="money" class="panel">£150</div>
+      <button id="hornBtn" aria-label="Horn" hidden>Beep</button>
+      <button id="viewBtn" aria-label="Driving view" hidden>Chase</button>
+      <button id="fpBtn" aria-label="First person">1P</button>
+      <button id="zoomBtn" aria-label="Zoom">1×</button>
+      <button id="menuBtn" aria-label="Menu">☰</button>
+    </div>
+  </div>
+
+  <div id="hurt"></div>
+  <div class="lb" id="lbTop"></div><div class="lb" id="lbBot"></div><div id="cineCap"></div>
+  <div id="stall" hidden>
+    <canvas id="stallCv" width="400" height="240"></canvas>
+    <div id="stallCap" hidden></div>
+    <div id="stallBtns"></div>
+  </div>
+  <div id="ticker" class="float"></div>
+  <div id="hint" class="float panel" hidden></div>
+  <div id="toast" class="float" hidden></div>
+
+  <div id="speed" class="float panel" hidden>
+    <button id="sp1" aria-pressed="true">1×</button>
+    <button id="sp2" aria-pressed="false">2×</button>
+    <button id="sp4" aria-pressed="false">4×</button>
+  </div>
+
+  <div id="controls" class="float">
+    <button id="act" disabled hidden></button>
+    <div id="lower">
+      <button id="betBtn" hidden>Bet</button>
+      <button id="hit" hidden>Punch</button>
+      <button id="throw" hidden>Throw</button>
+      <button id="moreBtn">More…</button>
+      <button id="bagBtn">Bag</button>
+    </div>
+  </div>
+
+  <div id="sheet" class="float panel sheet" hidden></div>
+  <div id="fade"></div>
+  <div id="debug" class="float panel" hidden></div>
+
+  <div id="intro" class="overlay">
+    <div class="card panel">
+      <p class="eyebrow"><span id="introRound">Match day</span><span id="introKo">KO 5:30</span></p>
+      <h1 id="introTitle">England are in the quarter-final.</h1>
+      <p id="introText">You are outside the ground with £150 and an England shirt. Kick-off is in five and a half minutes. Help England win, any way you like.</p>
+      <ul>
+        <li><b>Move:</b> drag on the left of the screen<span class="keys">, or <kbd>WASD</kbd></span>. Push further to run<span class="keys"> (<kbd>Shift</kbd>)</span>.</li>
+        <li><b>The red button</b> does the obvious thing; a red ring shows what it's aimed at<span class="keys"> (<kbd>E</kbd>)</span>. <b>More…</b> has everything else<span class="keys"> (<kbd>R</kbd>)</span>.</li>
+        <li><b>Gold coins</b> mark people selling things. <b>Red marks</b> mean someone's coming for you.</li>
+        <li class="keys">Throw <kbd>Q</kbd>, punch <kbd>F</kbd>, bag <kbd>Tab</kbd>, zoom <kbd>Z</kbd>. Tap or click someone to aim at them.</li>
+      </ul>
+      <p>Nobody will tell you how. Listen to people, watch what goes on, and try things.</p>
+      <div class="row"><button id="start" class="primary">Start</button></div>
+    </div>
+  </div>
+
+  <div id="prep" class="overlay" hidden>
+    <div class="card panel">
+      <p class="eyebrow"><span>Away day</span><span>Next match</span></p>
+      <h1>Pack your bag</h1>
+      <p id="prepText"></p>
+      <div id="prepList" class="list prep"></div>
+      <p id="prepProblem" class="small"></p>
+      <div class="row"><button id="prepGo" class="primary">Travel to the semi-final</button></div>
+    </div>
+  </div>
+
+  <div id="ending" class="overlay" hidden>
+    <div class="card panel">
+      <p class="eyebrow"><span>Full time</span><span id="endScore"></span></p>
+      <h1 id="endTitle">Full-time</h1>
+      <p id="endText"></p>
+      <div class="news">
+        <div class="newsbar"><span>Evening News</span><span id="newsTime">22:00</span></div>
+        <h2 id="newsHead"></h2>
+        <ul id="newsList"></ul>
+      </div>
+      <p class="small">What you did:</p>
+      <ul id="endList"></ul>
+      <p>Go back to:</p>
+      <div class="row" id="endCps"></div>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body></html>
