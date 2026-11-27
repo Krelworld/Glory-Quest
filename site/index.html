@@ -162,6 +162,21 @@
   #itemCard span { display: block; margin-top: 3px; font: 600 14px/1.25 var(--body); }
   #itemCard small { display: block; margin-top: 4px; font: 600 11px/1.2 var(--body); color: #6b5f45; }
   #itemCard.in { animation: itemIn 5.2s ease both; }
+  #itemCard .bulb.rule { background: #7dffa8; }
+  /* A chain Grozz set off, as a TV graphic. */
+  #chainStrap { position: absolute; left: 50%; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 58px); transform: translateX(-50%); z-index: 6; pointer-events: none; display: flex; align-items: stretch; max-width: calc(100% - 32px); border: 3px solid #000; box-shadow: 4px 4px 0 rgba(0,0,0,.55); }
+  #chainStrap[hidden] { display: none; }
+  #chainStrap b { display: flex; align-items: center; padding: 6px 10px; background: #d7263d; color: #fff; font: 800 13px/1 var(--display); letter-spacing: .08em; white-space: nowrap; }
+  #chainStrap span { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding: 6px 10px; background: #10151c; color: #fff; font: 800 12px/1.2 var(--display); letter-spacing: .04em; min-width: 0; }
+  #chainStrap i { font-style: normal; } #chainStrap i:last-child { color: #f2c94c; }
+  #chainStrap em { font-style: normal; color: #d7263d; }
+  #chainStrap.in { animation: strapIn 5.2s ease both; }
+  @media (max-aspect-ratio: 4/5) {
+    #chainStrap { flex-direction: column; width: calc(100% - 32px); top: calc(max(8px, env(safe-area-inset-top, 0px)) + 118px); }
+    #chainStrap b { padding: 4px 8px; font-size: 11px; }
+    #chainStrap span { font-size: 12px; }
+  }
+  @keyframes strapIn { 0% { opacity: 0; transform: translate(-50%, -10px) scaleX(.6); } 5% { opacity: 1; transform: translate(-50%, 0) scaleX(1.04); } 9%, 90% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
   @media (max-height: 520px) {
     #itemCard { bottom: auto; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 52px); width: min(400px, 46vw); padding: 6px 9px; gap: 8px; }
     #itemCard img, #itemCard canvas { width: 34px; height: 34px; }
@@ -192,19 +207,7 @@
   #fruit canvas { width: 64px; height: 64px; image-rendering: pixelated; border: 2px solid #333; }
   #fruit .msg { display: block; margin-top: 8px; min-height: 16px; font: 800 15px/1 var(--display); color: #fff; letter-spacing: .06em; }
   #fruit.won .msg { color: #f2c94c; animation: tkMsg .3s both; }
-  #swoop { position: fixed; inset: 0; z-index: 70; background: #000; overflow: hidden; }
-  #swoop .sky { position: absolute; inset: 0; background: linear-gradient(#1a2236 0%, #3a4a6a 38%, #8a96a8 52%, #2a2f38 100%); opacity: 0; transition: opacity .4s; }
-  #swoop.go .sky { opacity: 1; }
-  #swoop .stage { position: absolute; inset: 0; perspective: 620px; perspective-origin: 50% 28%; }
-  #swoop .map { position: absolute; left: 0; top: 0; transform-origin: 0 0; animation: mapIn .5s ease-out; background-size: 100% 100%; image-rendering: pixelated; box-shadow: 0 0 120px 60px rgba(20,24,30,.9); }
-  #swoop .fog { position: absolute; left: 0; right: 0; top: 0; height: 45%; background: linear-gradient(rgba(58,74,106,1), rgba(58,74,106,0)); pointer-events: none; }
-  #swoop .cap { position: absolute; left: 0; right: 0; top: calc(max(16px, env(safe-area-inset-top, 0px)) + 30px); text-align: center; color: #fff; text-shadow: 3px 3px 0 #000; opacity: 0; }
-  #swoop .cap b { display: block; font: 800 clamp(22px, 7vw, 42px)/1 var(--display); letter-spacing: .06em; }
-  #swoop .cap span { display: block; margin-top: 8px; font: 700 clamp(12px, 3.4vw, 16px)/1 var(--display); letter-spacing: .12em; color: var(--bug); }
-  #swoop .skipsw { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); padding: 10px 12px; background: #14213d; color: #fff; border: 2px solid #000; font: 700 14px var(--display); }
-  #swoop.out { animation: swoopOut .45s forwards; }
   @keyframes swoopOut { to { opacity: 0; } }
-  @keyframes mapIn { from { opacity: 0; } }
   #track { max-width: min(330px, calc(100vw - 150px)); padding: 5px 10px; background: rgba(10,14,20,.88); border-left: 4px solid #f2c94c; font: 600 12px/1.25 var(--body); color: #f4efe0; }
   #track b { font: 800 12px/1.2 var(--display); color: #f2c94c; letter-spacing: .03em; }
   #track i { font-style: normal; color: #9fb0c0; margin-left: 6px; font: 700 11px var(--display); }
@@ -560,6 +563,7 @@
   <div id="fade"></div>
   <div id="roomCard" hidden></div>
   <div id="itemCard" hidden></div>
+  <div id="chainStrap" hidden></div>
   <div id="scanCard" hidden></div>
   <div id="fruit" hidden></div>
   <div id="debug" class="float panel" hidden></div>
@@ -610,5 +614,5 @@
     </div>
   </div>
 </div>
-<script src="game.js?v=cf851abcaf"></script>
+<script src="game.js?v=2c5ace36e0"></script>
 </body></html>
